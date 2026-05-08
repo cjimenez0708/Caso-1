@@ -249,16 +249,424 @@ Red = Review
 
 ## 1.6 Design Patterns
 
-- Singleton (Auth Service)
-- Factory (Document processors)
-- Observer (State updates)
-- Strategy (File processing logic)
-- Adapter (API integration)
-- Facade (Service abstraction)
-- Middleware (Security handling)
-- Publisher-Subscriber (Event handling)
+The system architecture follows multiple software design patterns to ensure scalability, maintainability, extensibility, and separation of concerns.
+
+### Builder Pattern
+
+The Builder Pattern is used to construct different document processors and document generation pipelines.
+
+This pattern allows flexible creation of processors for multiple supported formats:
+
+- DOCX Processor
+- XLSX Processor
+- PDF Processor
+- JPG Processor
+- PNG Processor
+
+Each processor follows a standardized construction workflow while allowing format-specific implementations.
 
 ---
+
+### Strategy Pattern
+
+The Strategy Pattern is implemented to dynamically select the appropriate processing strategy depending on the uploaded file type.
+
+Examples:
+- OCR extraction strategy
+- Semantic parsing strategy
+- Validation strategy
+- File classification strategy
+
+This pattern reduces coupling and allows future support for additional formats without modifying the core processing workflow.
+
+The Strategy Pattern is also used to create the different document processors such as:
+- Word Processor
+- XLSX Processor
+- PDF Processor
+- JPG Processor
+- PNG Processor
+
+---
+
+### Observer Pattern
+
+The Observer Pattern is used within the `NotificationService`.
+
+Subscribers listen for important backend events such as:
+- Upload completed
+- OCR completed
+- Extraction failed
+- DUA generated
+- Validation warnings
+
+This allows asynchronous notification handling and decouples event producers from consumers.
+
+NotificationService subscriptions work using the Observer Pattern architecture.
+
+---
+
+### Adapter Pattern
+
+The Adapter Pattern is used to abstract output formatting and document writing logic.
+
+`FormatAdapters` transform extracted semantic information into standardized document structures.
+
+Concrete format implementations include:
+- Paragraph
+- Bullets
+- Table
+- Label
+- Amount
+
+This architecture enables future support for additional export formats without affecting business logic.
+
+---
+
+### Singleton Pattern
+
+The Singleton Pattern is used for globally shared services and utilities to ensure centralized state consistency and optimized resource usage.
+
+Singleton services include:
+- ExceptionHandling
+- DocumentParsers
+- Utils
+- StateManagement
+- API Clients
+- Settings classes
+
+---
+
+# Backend Design
+
+## Technology Stack
+
+- Architecture style:
+  - REST API
+  - HTTPS communication
+
+- API Gateway:
+  - Azure API Management
+
+- Hosting platform:
+  - Azure App Service
+
+- API standard:
+  - OpenAPI Specification (Swagger)
+
+- Backend language:
+  - C#
+  - .NET 9
+  - ASP.NET Core
+
+- Repository architecture:
+  - Monorepo architecture
+
+- Backend folder:
+  - `/duabusiness`
+
+- Communication style:
+  - Service-oriented modular architecture
+  - Lightweight services instead of fully distributed microservices
+
+- Asynchronous operations and notifications:
+  - Azure Notification Hubs
+
+- Cloud provider:
+  - Microsoft Azure
+
+---
+
+## Backend Layered Design
+
+The backend follows a layered architecture design:
+
+- API Layer
+- Authentication Layer
+- Application Services Layer
+- Business Logic Layer
+- AI Processing Layer
+- Document Processing Layer
+- Persistence Layer
+- Integration Layer
+- Storage Layer
+- Observability Layer
+
+---
+
+## Security
+
+Frontend and backend security configurations are designed to work in synchronization.
+
+### Communication Security
+
+- HTTPS enforced for all environments
+- TLS 1.3 required
+- HSTS enabled
+
+---
+
+### Encryption
+
+- Database encryption algorithm:
+  - AES-256 encryption at rest
+
+- Secrets management:
+  - Azure Key Vault
+
+- Authentication tokens:
+  - JWT tokens with expiration and refresh strategy
+
+---
+
+### Payload Restrictions
+
+General API payload limits:
+
+- Standard endpoints:
+  - Maximum payload size: 25 MB
+
+- File upload endpoints:
+  - Maximum payload size: 250 MB
+
+Streaming upload processing is required to avoid memory overconsumption.
+
+---
+
+### Rate Limiting
+
+- Maximum concurrent connections per client:
+  - 100 concurrent requests
+
+- Rate limiting policy:
+  - Configured through Azure API Management
+
+- DDoS protection:
+  - Azure native protection services
+
+---
+
+### Data Retention Policy
+
+- Production data retention:
+  - 90 days active storage
+
+- Archive strategy:
+  - Automatic migration to Azure Archive Storage after 90 days
+
+- Audit logs retention:
+  - 1 year
+
+---
+
+# Observability
+
+Frontend and backend observability configurations are integrated.
+
+## Registered Events
+
+The platform logs the following events:
+
+- User login attempts
+- Authentication failures
+- File uploads
+- File validation failures
+- OCR processing results
+- Semantic extraction events
+- DUA generation events
+- API failures
+- Infrastructure exceptions
+- Processing duration metrics
+- Confidence score generation
+- Notification delivery events
+
+---
+
+## Observability Platforms
+
+- Azure Application Insights
+- OpenTelemetry
+- Azure Monitor
+- Sentry
+
+---
+
+## Analytics Dashboards
+
+Dashboards and monitoring visualizations are generated using:
+
+- Azure Dashboard
+- Grafana
+
+---
+
+# Infrastructure (DevOps)
+
+## CI/CD Automation
+
+- GitHub Actions
+- YAML-based workflows
+
+---
+
+## Deployment Strategy
+
+### Development Environment
+
+- Azure App Service Deployment Slots
+
+### Staging Environment
+
+- Terraform-managed Azure infrastructure
+
+### Production Environment
+
+- Terraform-managed Azure infrastructure
+
+Infrastructure provisioning is fully Infrastructure-as-Code (IaC).
+
+---
+
+# Availability
+
+## Availability Target
+
+- Target uptime:
+  - 99.99%
+
+Maximum estimated downtime per year:
+- Approximately 52 minutes annually
+
+---
+
+## Recovery Strategy
+
+All critical infrastructure components must be evaluated for Single Points of Failure (SPOF).
+
+For every infrastructure component:
+- Recovery guarantees must be documented
+- Native Azure SLA must be verified
+- Redundancy strategies must be specified
+
+Examples:
+- Geo-redundant storage
+- Multi-zone deployment
+- Automated backup policies
+- Health probes and auto-restart mechanisms
+
+Any service that cannot natively achieve the required uptime target must include additional recovery and redundancy mechanisms.
+
+---
+
+# Scalability
+
+The following architectural components scale according to request volume:
+
+- API Gateway instances
+- Azure App Service instances
+- File processing workers
+- OCR processing queues
+- Notification services
+- Database throughput
+- Blob storage operations
+
+Horizontal scaling is prioritized over vertical scaling whenever possible.
+
+---
+
+# Backend Key Workflows
+
+## Upload Files to Generate DUA
+
+1. User uploads files from the frontend.
+2. Backend receives file metadata.
+3. Backend opens streaming transfer for each file.
+4. Files are processed sequentially in raw binary format.
+5. Files are stored in Azure Blob Storage.
+6. File references are mapped into the database.
+7. Validation service verifies supported formats.
+8. Classification service identifies document type.
+9. OCR service extracts textual content.
+10. Semantic extraction service identifies customs information.
+11. Data mapping service transforms extracted information into DUA structure.
+12. Confidence calculation service evaluates extraction reliability.
+13. DUA generation service produces final document.
+14. Notification service updates frontend status.
+15. User downloads generated DUA document.
+
+---
+
+## Setup DUA Template Workflow
+
+1. Administrator uploads official DUA template.
+2. Backend validates template structure.
+3. Template metadata is registered.
+4. Template fields are mapped to extraction entities.
+5. Template versioning is stored.
+6. Validation rules are associated with template sections.
+7. Template becomes available for generation workflows.
+
+---
+
+# Architecture Diagrams
+
+Architecture diagrams follow the C4 Model standard.
+
+Included diagrams:
+- Context Diagram
+- Container Diagram
+- Code Diagram
+
+The Components Diagram is intentionally excluded for this project scope.
+
+Reference material:
+- Week #6
+- Week #7
+
+---
+
+# Design Considerations
+
+- System configurations, parameters, and policies must be fully documented and maintained within the source code.
+- Resource allocations including memory, server specifications, networking configurations, and load balancing parameters must be documented.
+- Algorithm selection and configuration parameters used in business logic and AI extraction must be documented.
+- Agent prototypes and AI orchestration flows must be defined.
+- Interfaces, proxies, and external integration points must be documented.
+- Architectural decisions must maintain traceability and version control.
+
+---
+
+# Source Code
+
+A specialized AI agent will generate the backend project skeleton based on this technical specification.
+
+The agent must:
+- Generate folder structures
+- Generate interfaces
+- Generate DTOs
+- Generate service contracts
+- Generate controller skeletons
+- Generate configuration files
+
+The agent must NOT implement production business logic.
+
+The backend directory structure must align with the monorepo architecture.
+
+Example backend structure:
+
+```text
+/duabusiness
+  /api
+  /application
+  /domain
+  /infrastructure
+  /integrations
+  /workers
+  /storage
+  /observability
+  /tests
+```
+
+Key folders and primary classes must be referenced throughout this README documentation.
 
 ## 1.7 Project Scaffold
 
